@@ -1,0 +1,232 @@
+{
+  "main": {
+    "id": "35ac27117477abe5",
+    "type": "split",
+    "children": [
+      {
+        "id": "d0ccefd4e015f616",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "6fe710af89070150",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "docs/superpowers/plans/2026-04-17-ai-receptionist.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "2026-04-17-ai-receptionist"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "ddf29fb575dd7ea2",
+    "type": "split",
+    "children": [
+      {
+        "id": "252c79e2e1717c07",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dfb0abc3fa7d0351",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "6eb4351f7831dfca",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "f14763a3d84b7669",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "1d65d0e8e49861f7",
+    "type": "split",
+    "children": [
+      {
+        "id": "e7f8c8beed8a5215",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7891f0d20fd41057",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "e18e9cd5f87a5cea",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "a1b2f17b69811272",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "c7ad8b4a4047ea3a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "0822158692ebacaa",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "6fe710af89070150",
+  "lastOpenFiles": [
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/migrations/migrations.ts",
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/migrations/index.ts",
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/migrations/007_create_hyperbolic_functions.sql",
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/migrations/006_create_gnn_functions.sql",
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/migrations/005_create_attention_functions.sql",
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/migrations/004_create_functions.sql",
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/migrations/003_create_indices.sql",
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/migrations/002_create_vector_tables.sql",
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/migrations/001_create_extension.sql",
+    "ruflo/v3/@claude-flow/cli/src/transfer/store/tests/standalone-test.ts",
+    "ruflo/v3/plugins/gastown-bridge/wasm/shared/src/simd.rs",
+    "ruflo/v3/@claude-flow/plugins/src/integrations/ruvector/ARCHITECTURE.md",
+    "ruflo/v3/@claude-flow/shared/src/hooks/README.md",
+    "ruflo/v3/@claude-flow/shared/src/hooks/INTEGRATION.md",
+    "ruflo/v3/@claude-flow/plugins/examples/ruvector/README.md",
+    "ruflo/v3/@claude-flow/guidance/docs/tutorials/proof-audit-trail.md",
+    "ruflo/v3/@claude-flow/guidance/docs/tutorials/enforcement-gates.md",
+    "ruflo/v3/@claude-flow/guidance/docs/tutorials/continue-gate.md",
+    "ruflo/v3/@claude-flow/guidance/docs/tutorials/cicd-headless-testing.md",
+    "ruflo/v3/@claude-flow/guidance/docs/reports/flight-build-report.md",
+    "ruflo/v3/@claude-flow/guidance/docs/reports/claude-md-analysis.md",
+    "ruflo/v3/@claude-flow/guidance/docs/reference/api-quick-reference.md",
+    "ruflo/v3/@claude-flow/guidance/docs/guides/wasm-kernel.md",
+    "ruflo/v3/@claude-flow/guidance/docs/guides/multi-agent-security.md",
+    "ruflo/v3/@claude-flow/guidance/docs/guides/knowledge-management.md",
+    "ruflo/v3/@claude-flow/guidance/docs/guides/getting-started.md",
+    "ruflo/v3/@claude-flow/guidance/docs/guides/capabilities-and-trust.md",
+    "ruflo/v3/@claude-flow/guidance/docs/guides/architecture-overview.md",
+    "ruflo/v3/@claude-flow/guidance/docs/diagrams/system-diagrams.md",
+    "ruflo/v3/@claude-flow/guidance/docs/adrs/ADR-G026-review-remediation.md",
+    "ruflo/v3/@claude-flow/guidance/docs/adrs/ADR-G025-wasm-kernel.md",
+    "ruflo/v3/@claude-flow/guidance/docs/adrs/ADR-G024-continue-gate.md",
+    "ruflo/v3/@claude-flow/guidance/docs/adrs/ADR-G023-meta-governance.md",
+    "ruflo/v3/@claude-flow/guidance/docs/adrs/ADR-G022-adversarial-model.md",
+    "ruflo/v3/@claude-flow/guidance/docs/adrs/ADR-G021-human-authority-and-irreversibility.md",
+    "ruflo/v3/@claude-flow/guidance/docs/adrs/ADR-G020-temporal-assertions.md",
+    "ruflo/v2/assets/image.png",
+    "ruflo/ruflo/src/ruvocal/static/huggingchat/tools-thumbnail.png",
+    "ruflo/ruflo/src/ruvocal/static/huggingchat/thumbnail.png",
+    "ruflo/ruflo/src/ruvocal/static/huggingchat/omni-welcome.gif",
+    "ruflo/ruflo/src/ruvocal/static/huggingchat/logo.svg",
+    "ruflo/ruflo/src/ruvocal/static/huggingchat/icon.svg",
+    "ruflo/ruflo/src/ruvocal/static/huggingchat/icon-96x96.png",
+    "ruflo/ruflo/src/ruvocal/static/huggingchat/icon-72x72.png",
+    "ruflo/ruflo/src/ruvocal/static/huggingchat/icon-512x512.png",
+    "ruflo/ruflo/src/ruvocal/static/huggingchat/icon-48x48.png"
+  ]
+}

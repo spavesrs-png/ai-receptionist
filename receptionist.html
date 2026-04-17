@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Receptionist</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #4F46E5;
+      --brand-dark: #3730A3;
+      --white: #ffffff;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-400: #9CA3AF;
+      --gray-500: #6B7280;
+      --gray-700: #374151;
+      --gray-900: #111827;
+      --radius: 16px;
+      --shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    html, body { min-height: 100%; }
+    body {
+      font-family: var(--font);
+      font-size: 16px;
+      color: var(--gray-900);
+      line-height: 1.6;
+      background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
+      padding: 24px;
+    }
+
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--white);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      padding: 32px;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: white;
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+
+    header h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+
+    header p {
+      margin-top: 12px;
+      max-width: 540px;
+      font-size: 1rem;
+      opacity: 0.92;
+    }
+
+    .admin-button {
+      border: none;
+      border-radius: 999px;
+      padding: 14px 20px;
+      font-weight: 700;
+      cursor: pointer;
+      background: white;
+      color: var(--brand-dark);
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .admin-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
+    }
+
+    .content {
+      display: grid;
+      gap: 24px;
+      padding: 32px;
+    }
+
+    .section {
+      background: var(--gray-50);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .section h2 {
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+      color: var(--gray-900);
+    }
+
+    .section p {
+      margin-bottom: 16px;
+      color: var(--gray-700);
+    }
+
+    .info-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .info-card {
+      padding: 20px;
+      background: white;
+      border-radius: 16px;
+      border: 1px solid rgba(148, 163, 184, 0.16);
+    }
+
+    .info-card strong {
+      display: block;
+      margin-bottom: 12px;
+      color: var(--gray-900);
+    }
+
+    .info-card div {
+      color: var(--gray-700);
+      line-height: 1.7;
+    }
+
+    .form-group {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    input, textarea {
+      width: 100%;
+      border-radius: 14px;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      background: white;
+      padding: 14px 16px;
+      font-size: 1rem;
+      color: var(--gray-900);
+      outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+
+    input:focus, textarea:focus {
+      border-color: var(--brand);
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
+    }
+
+    textarea {
+      min-height: 140px;
+      resize: vertical;
+    }
+
+    button,
+    input[type="submit"] {
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      padding: 14px 20px;
+      font-weight: 700;
+      color: white;
+      background: var(--brand);
+      transition: transform .2s ease, filter .2s ease;
+    }
+
+    button:hover,
+    input[type="submit"]:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.48);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 10;
+    }
+
+    .modal {
+      width: min(640px, 100%);
+      max-height: 90vh;
+      overflow-y: auto;
+      background: white;
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: 0 32px 80px rgba(15, 23, 42, 0.18);
+    }
+
+    .modal h3 {
+      margin-bottom: 16px;
+      font-size: 1.4rem;
+    }
+
+    .modal p {
+      color: var(--gray-700);
+      margin-bottom: 24px;
+    }
+
+    .modal small {
+      display: block;
+      margin-top: 8px;
+      color: var(--gray-500);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .button-secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    .hidden { display: none !important; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 24px;
+      background: rgba(15, 23, 42, 0.96);
+      color: white;
+      border-radius: 999px;
+      padding: 14px 20px;
+      font-size: 0.95rem;
+      z-index: 20;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s ease;
+    }
+
+    .toast.visible { opacity: 1; }
+
+    @media (max-width: 720px) {
+      header { padding: 24px; }
+      .content { padding: 20px; }
+      .info-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page card" role="application">
+    <header>
+      <div>
+        <h1 id="brandName">AI Receptionist</h1>
+        <p id="brandTagline">Small business receptionist page for callback requests and contact details.</p>
+      </div>
+      <button id="adminButton" class="admin-button" type="button">Admin</button>
+    </header>
+
+    <div class="content">
+      <section class="section">
+        <h2>Welcome</h2>
+        <p id="heroText">Welcome. Use Admin to set your password and update business settings.</p>
+      </section>
+
+      <section class="section info-grid">
+        <div class="info-card">
+          <strong>Contact information</strong>
+          <div id="contactDetails"></div>
+        </div>
+
+        <div class="info-card">
+          <strong>Request a callback</strong>
+          <form id="leadForm">
+            <div class="form-group">
+              <label for="visitorName">Name</label>
+              <input id="visitorName" name="visitorName" type="text" required placeholder="Your name" />
+            </div>
+            <div class="form-group">
+              <label for="visitorPhone">Phone</label>
+              <input id="visitorPhone" name="visitorPhone" type="tel" required placeholder="+46 70 123 45 67" />
+            </div>
+            <div class="form-group">
+              <label for="visitorNotes">Notes</label>
+              <textarea id="visitorNotes" name="visitorNotes" placeholder="How can we help?" rows="4"></textarea>
+            </div>
+            <input type="submit" value="Send request" />
+          </form>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">Admin</h3>
+      <p id="modalDescription">Use this panel to set your admin password and update business settings. All data is saved locally in your browser.</p>
+
+      <div id="loginSection" class="admin-section hidden">
+        <div class="form-group">
+          <label for="loginPassword">Admin password</label>
+          <input id="loginPassword" type="password" placeholder="Enter password" />
+        </div>
+        <div class="modal-footer">
+          <button id="closeModal" class="button-secondary" type="button">Cancel</button>
+          <button id="loginSubmit" type="button">Log in</button>
+        </div>
+      </div>
+
+      <div id="setupSection" class="admin-section hidden">
+        <p>Set your admin password once. You can change it later in Settings.</p>
+        <div class="form-group">
+          <label for="setupPassword">Admin password</label>
+          <input id="setupPassword" type="password" placeholder="New password" />
+        </div>
+        <div class="form-group">
+          <label for="setupPasswordConfirm">Confirm password</label>
+          <input id="setupPasswordConfirm" type="password" placeholder="Confirm password" />
+        </div>
+        <div class="modal-footer">
+          <button id="closeModal2" class="button-secondary" type="button">Cancel</button>
+          <button id="setupSubmit" type="button">Save password</button>
+        </div>
+      </div>
+
+      <div id="settingsSection" class="admin-section hidden">
+        <div class="form-group">
+          <label for="settingBusinessName">Business name</label>
+          <input id="settingBusinessName" type="text" />
+        </div>
+        <div class="form-group">
+          <label for="settingTagline">Tagline</label>
+          <input id="settingTagline" type="text" />
+        </div>
+        <div class="form-group">
+          <label for="settingHeroText">Welcome message</label>
+          <textarea id="settingHeroText" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="settingPhone">Phone</label>
+          <input id="settingPhone" type="tel" />
+        </div>
+        <div class="form-group">
+          <label for="settingEmail">Email</label>
+          <input id="settingEmail" type="email" />
+        </div>
+        <div class="form-group">
+          <label for="settingWebsite">Website</label>
+          <input id="settingWebsite" type="url" />
+        </div>
+        <div class="form-group">
+          <label for="settingPassword">Change password</label>
+          <input id="settingPassword" type="password" placeholder="Leave blank to keep current password" />
+        </div>
+        <div class="modal-footer">
+          <button id="closeModal3" class="button-secondary" type="button">Close</button>
+          <button id="saveSettings" type="button">Save settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const STORAGE_KEY = 'aiReceptionistSettings';
+    const AUTH_KEY = 'aiReceptionistLoggedIn';
+
+    const defaultData = {
+      businessName: 'AI Receptionist',
+      tagline: 'Small business receptionist page for callback requests and contact details.',
+      heroText: 'Welcome. Use Admin to set your password and update business settings.',
+      phone: '+46 70 000 00 00',
+      email: 'info@example.com',
+      website: 'https://example.com',
+      adminPassword: null
+    };
+
+    const state = {
+      data: loadData(),
+      isLoggedIn: sessionStorage.getItem(AUTH_KEY) === 'true'
+    };
+
+    const elements = {
+      brandName: document.getElementById('brandName'),
+      brandTagline: document.getElementById('brandTagline'),
+      heroText: document.getElementById('heroText'),
+      contactDetails: document.getElementById('contactDetails'),
+      adminButton: document.getElementById('adminButton'),
+      modalBackdrop: document.getElementById('modalBackdrop'),
+      loginSection: document.getElementById('loginSection'),
+      setupSection: document.getElementById('setupSection'),
+      settingsSection: document.getElementById('settingsSection'),
+      modalTitle: document.getElementById('modalTitle'),
+      modalDescription: document.getElementById('modalDescription'),
+      loginPassword: document.getElementById('loginPassword'),
+      setupPassword: document.getElementById('setupPassword'),
+      setupPasswordConfirm: document.getElementById('setupPasswordConfirm'),
+      settingBusinessName: document.getElementById('settingBusinessName'),
+      settingTagline: document.getElementById('settingTagline'),
+      settingHeroText: document.getElementById('settingHeroText'),
+      settingPhone: document.getElementById('settingPhone'),
+      settingEmail: document.getElementById('settingEmail'),
+      settingWebsite: document.getElementById('settingWebsite'),
+      settingPassword: document.getElementById('settingPassword'),
+      closeModal: document.getElementById('closeModal'),
+      closeModal2: document.getElementById('closeModal2'),
+      closeModal3: document.getElementById('closeModal3'),
+      loginSubmit: document.getElementById('loginSubmit'),
+      setupSubmit: document.getElementById('setupSubmit'),
+      saveSettings: document.getElementById('saveSettings'),
+      leadForm: document.getElementById('leadForm'),
+      toast: document.getElementById('toast')
+    };
+
+    function loadData() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? Object.assign({}, defaultData, JSON.parse(saved)) : Object.assign({}, defaultData);
+      } catch (error) {
+        console.error('Failed to read settings:', error);
+        return Object.assign({}, defaultData);
+      }
+    }
+
+    function saveData() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
+    }
+
+    function showToast(message) {
+      elements.toast.textContent = message;
+      elements.toast.classList.add('visible');
+      window.clearTimeout(window.toastTimeout);
+      window.toastTimeout = window.setTimeout(() => {
+        elements.toast.classList.remove('visible');
+      }, 3000);
+    }
+
+    function renderContact() {
+      const lines = [
+        `Phone: ${state.data.phone}`,
+        `Email: ${state.data.email}`,
+        `Website: ${state.data.website}`
+      ];
+      elements.contactDetails.innerHTML = lines.map(line => `<div>${line}</div>`).join('');
+    }
+
+    function render() {
+      elements.brandName.textContent = state.data.businessName;
+      elements.brandTagline.textContent = state.data.tagline;
+      elements.heroText.textContent = state.data.heroText;
+      renderContact();
+      if (state.data.adminPassword && state.isLoggedIn) {
+        elements.adminButton.textContent = 'Admin (signed in)';
+      } else {
+        elements.adminButton.textContent = 'Admin';
+      }
+    }
+
+    function hideAllAdminSections() {
+      elements.loginSection.classList.add('hidden');
+      elements.setupSection.classList.add('hidden');
+      elements.settingsSection.classList.add('hidden');
+    }
+
+    function openModal() {
+      elements.modalBackdrop.classList.remove('hidden');
+      elements.modalBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeModal() {
+      elements.modalBackdrop.classList.add('hidden');
+      elements.modalBackdrop.setAttribute('aria-hidden', 'true');
+      elements.loginPassword.value = '';
+      elements.setupPassword.value = '';
+      elements.setupPasswordConfirm.value = '';
+      elements.settingPassword.value = '';
+    }
+
+    function openAdminPanel() {
+      hideAllAdminSections();
+      if (!state.data.adminPassword) {
+        elements.modalTitle.textContent = 'First-time admin setup';
+        elements.modalDescription.textContent = 'Create your admin password. After that, you can update business details and change the password in Settings.';
+        elements.setupSection.classList.remove('hidden');
+      } else if (state.isLoggedIn) {
+        elements.modalTitle.textContent = 'Settings';
+        elements.modalDescription.textContent = 'Update your business name, contact info, greeting text, and admin password.';
+        elements.settingsSection.classList.remove('hidden');
+        elements.settingBusinessName.value = state.data.businessName;
+        elements.settingTagline.value = state.data.tagline;
+        elements.settingHeroText.value = state.data.heroText;
+        elements.settingPhone.value = state.data.phone;
+        elements.settingEmail.value = state.data.email;
+        elements.settingWebsite.value = state.data.website;
+      } else {
+        elements.modalTitle.textContent = 'Admin login';
+        elements.modalDescription.textContent = 'Enter your admin password to access settings.';
+        elements.loginSection.classList.remove('hidden');
+      }
+      openModal();
+    }
+
+    elements.adminButton.addEventListener('click', openAdminPanel);
+    elements.closeModal.addEventListener('click', closeModal);
+    elements.closeModal2.addEventListener('click', closeModal);
+    elements.closeModal3.addEventListener('click', closeModal);
+
+    elements.setupSubmit.addEventListener('click', () => {
+      const password = elements.setupPassword.value.trim();
+      const confirm = elements.setupPasswordConfirm.value.trim();
+      if (!password || password.length < 6) {
+        showToast('Please choose a password with at least 6 characters.');
+        return;
+      }
+      if (password !== confirm) {
+        showToast('Passwords do not match.');
+        return;
+      }
+      state.data.adminPassword = password;
+      saveData();
+      state.isLoggedIn = true;
+      sessionStorage.setItem(AUTH_KEY, 'true');
+      showToast('Admin password saved. You are now signed in.');
+      render();
+      openAdminPanel();
+    });
+
+    elements.loginSubmit.addEventListener('click', () => {
+      const attempt = elements.loginPassword.value.trim();
+      if (attempt === state.data.adminPassword) {
+        state.isLoggedIn = true;
+        sessionStorage.setItem(AUTH_KEY, 'true');
+        showToast('Signed in successfully.');
+        render();
+        openAdminPanel();
+      } else {
+        showToast('Wrong password. Try again.');
+      }
+    });
+
+    elements.saveSettings.addEventListener('click', () => {
+      const updatedName = elements.settingBusinessName.value.trim();
+      const updatedTagline = elements.settingTagline.value.trim();
+      const updatedHeroText = elements.settingHeroText.value.trim();
+      const updatedPhone = elements.settingPhone.value.trim();
+      const updatedEmail = elements.settingEmail.value.trim();
+      const updatedWebsite = elements.settingWebsite.value.trim();
+      const newPassword = elements.settingPassword.value.trim();
+
+      if (!updatedName || !updatedTagline || !updatedHeroText) {
+        showToast('Business name, tagline, and welcome message are required.');
+        return;
+      }
+
+      state.data.businessName = updatedName;
+      state.data.tagline = updatedTagline;
+      state.data.heroText = updatedHeroText;
+      state.data.phone = updatedPhone || state.data.phone;
+      state.data.email = updatedEmail || state.data.email;
+      state.data.website = updatedWebsite || state.data.website;
+
+      if (newPassword) {
+        if (newPassword.length < 6) {
+          showToast('New password must have at least 6 characters.');
+          return;
+        }
+        state.data.adminPassword = newPassword;
+      }
+
+      saveData();
+      showToast('Settings saved successfully.');
+      render();
+      closeModal();
+    });
+
+    elements.leadForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const name = document.getElementById('visitorName').value.trim();
+      const phone = document.getElementById('visitorPhone').value.trim();
+      const notes = document.getElementById('visitorNotes').value.trim();
+
+      if (!name || !phone) {
+        showToast('Please enter your name and phone number.');
+        return;
+      }
+      showToast('Callback request saved locally. Use Admin to check or change settings.');
+      elements.leadForm.reset();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !elements.modalBackdrop.classList.contains('hidden')) {
+        closeModal();
+      }
+    });
+
+    elements.modalBackdrop.addEventListener('click', (event) => {
+      if (event.target === elements.modalBackdrop) {
+        closeModal();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

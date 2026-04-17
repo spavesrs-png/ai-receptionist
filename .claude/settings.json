@@ -1,0 +1,67 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(python:*)",
+      "Bash(pip:*)",
+      "Bash(code:*)",
+      "Bash(mkdir:*)",
+      "Bash(copy:*)",
+      "Bash(xcopy:*)",
+      "Bash(type:*)",
+      "Bash(echo:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(del /f:*)",
+      "Bash(format:*)",
+      "Bash(rd /s:*)",
+      "Bash(rmdir /s:*)",
+      "Bash(drop table:*)",
+      "Bash(drop database:*)",
+      "Bash(*>.env:*)",
+      "Bash(cat .env:*)",
+      "Bash(type .env:*)",
+      "Write(.env)",
+      "Write(.env.*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx prettier --write \"${file}\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const c=process.env.CLAUDE_TOOL_INPUT||'';const blocked=['rm -rf','del /f /s','format c','rd /s /q','rmdir /s','DROP TABLE','DROP DATABASE','shutdown','taskkill /f'];const hit=blocked.find(b=>c.toLowerCase().includes(b.toLowerCase()));if(hit){console.error('BLOCKED: dangerous command detected: '+hit);process.exit(2);}console.log('safe');\""
+          }
+        ]
+      }
+    ]
+  },
+  "mcpServers": {
+    "obsidian": {
+      "command": "npx",
+      "args": ["-y", "obsidian-mcp", "VAULT_PATH_HERE"],
+      "env": {}
+    }
+  },
+  "context": {
+    "mode": "auto",
+    "structured": true
+  }
+}
