@@ -1,621 +1,1685 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Receptionist</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="AI Receptionist powered by Claude" />
+    <meta name="robots" content="noindex" />
+    <title>AI Receptionist</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    :root {
-      --brand: #4F46E5;
-      --brand-dark: #3730A3;
-      --white: #ffffff;
-      --gray-50: #F9FAFB;
-      --gray-100: #F3F4F6;
-      --gray-200: #E5E7EB;
-      --gray-400: #9CA3AF;
-      --gray-500: #6B7280;
-      --gray-700: #374151;
-      --gray-900: #111827;
-      --radius: 16px;
-      --shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
-      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
+      :root {
+        --brand: #4f46e5;
+        --brand-dark: #3730a3;
+        --white: #ffffff;
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-700: #374151;
+        --gray-900: #111827;
+        --radius: 12px;
+        --shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+        --font:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
 
-    html, body { min-height: 100%; }
-    body {
-      font-family: var(--font);
-      font-size: 16px;
-      color: var(--gray-900);
-      line-height: 1.6;
-      background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
-      padding: 24px;
-    }
+      body {
+        font-family: var(--font);
+        font-size: 15px;
+        color: var(--gray-900);
+        line-height: 1.5;
+      }
 
-    .page {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 24px;
-    }
+      /* ── Chat Panel ── */
+      #chat-panel {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 380px;
+        height: 540px;
+        background: var(--white);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition:
+          opacity 0.2s ease,
+          transform 0.2s ease;
+        z-index: 9999;
+      }
+      #chat-panel.hidden {
+        opacity: 0;
+        transform: translateY(12px);
+        pointer-events: none;
+      }
 
-    .card {
-      background: var(--white);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(15, 23, 42, 0.08);
-      overflow: hidden;
-    }
+      /* Header */
+      #chat-header {
+        background: var(--brand);
+        color: var(--white);
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+      #header-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #header-avatar {
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.25);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      #header-title {
+        font-weight: 600;
+        font-size: 15px;
+      }
+      #header-status {
+        font-size: 12px;
+        opacity: 0.85;
+      }
+      #close-btn {
+        background: none;
+        border: none;
+        color: var(--white);
+        cursor: pointer;
+        font-size: 18px;
+        opacity: 0.8;
+        padding: 4px;
+      }
+      #close-btn:hover {
+        opacity: 1;
+      }
 
-    header {
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
-      padding: 32px;
-      background: linear-gradient(135deg, #4f46e5, #6366f1);
-      color: white;
-      border-radius: var(--radius) var(--radius) 0 0;
-    }
+      /* Messages */
+      #messages-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: var(--gray-50);
+      }
+      .msg {
+        max-width: 80%;
+        padding: 10px 14px;
+        border-radius: 16px;
+        font-size: 14px;
+        line-height: 1.5;
+        word-wrap: break-word;
+      }
+      .msg-ai {
+        background: var(--white);
+        color: var(--gray-900);
+        border: 1px solid var(--gray-200);
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+      }
+      .msg-user {
+        background: var(--brand);
+        color: var(--white);
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+      }
+      .msg-error {
+        background: #fef2f2;
+        color: #b91c1c;
+        border: 1px solid #fecaca;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+      }
+      .msg-typing {
+        background: var(--white);
+        border: 1px solid var(--gray-200);
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+        padding: 12px 16px;
+      }
+      .typing-dots {
+        display: flex;
+        gap: 4px;
+      }
+      .typing-dots span {
+        width: 6px;
+        height: 6px;
+        background: var(--gray-400);
+        border-radius: 50%;
+        animation: bounce 1.2s infinite;
+      }
+      .typing-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .typing-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      @keyframes bounce {
+        0%,
+        80%,
+        100% {
+          transform: translateY(0);
+        }
+        40% {
+          transform: translateY(-6px);
+        }
+      }
 
-    header h1 {
-      font-size: clamp(2rem, 4vw, 3rem);
-      line-height: 1.05;
-      letter-spacing: -0.04em;
-    }
+      /* Input */
+      #input-area {
+        padding: 12px;
+        display: flex;
+        gap: 8px;
+        background: var(--white);
+        border-top: 1px solid var(--gray-200);
+        flex-shrink: 0;
+      }
+      #message-input {
+        flex: 1;
+        padding: 10px 14px;
+        border: 1px solid var(--gray-200);
+        border-radius: 24px;
+        font-family: var(--font);
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      #message-input:focus {
+        border-color: var(--brand);
+      }
+      #send-btn {
+        width: 42px;
+        height: 42px;
+        background: var(--brand);
+        color: var(--white);
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.15s,
+          opacity 0.15s;
+        flex-shrink: 0;
+      }
+      #send-btn:hover {
+        background: var(--brand-dark);
+      }
+      #send-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
 
-    header p {
-      margin-top: 12px;
-      max-width: 540px;
-      font-size: 1rem;
-      opacity: 0.92;
-    }
+      /* Admin bar */
+      #admin-bar {
+        text-align: center;
+        padding: 6px;
+        border-top: 1px solid var(--gray-100);
+        background: var(--white);
+        flex-shrink: 0;
+      }
+      #admin-link {
+        font-size: 11px;
+        color: var(--gray-400);
+        text-decoration: none;
+      }
+      #admin-link:hover {
+        color: var(--gray-500);
+      }
 
-    .admin-button {
-      border: none;
-      border-radius: 999px;
-      padding: 14px 20px;
-      font-weight: 700;
-      cursor: pointer;
-      background: white;
-      color: var(--brand-dark);
-      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);
-      transition: transform .2s ease, box-shadow .2s ease;
-    }
+      /* Floating bubble */
+      #bubble-btn {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        background: var(--brand);
+        color: var(--white);
+        border: none;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        transition:
+          background 0.15s,
+          transform 0.15s;
+        z-index: 10000;
+      }
+      #bubble-btn:hover {
+        background: var(--brand-dark);
+        transform: scale(1.05);
+      }
+      #bubble-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        width: 20px;
+        height: 20px;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        font-size: 11px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.15);
+        }
+      }
 
-    .admin-button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 20px 45px rgba(15, 23, 42, 0.2);
-    }
+      /* Embed mode */
+      body.embed-mode #bubble-btn {
+        display: none;
+      }
+      body.embed-mode #chat-panel {
+        position: relative;
+        bottom: auto;
+        right: auto;
+        width: 100%;
+        height: 100vh;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        opacity: 1;
+        transform: none;
+        pointer-events: auto;
+      }
+      body.embed-mode #close-btn {
+        display: none;
+      }
 
-    .content {
-      display: grid;
-      gap: 24px;
-      padding: 32px;
-    }
+      /* Mobile */
+      @media (max-width: 480px) {
+        #chat-panel {
+          bottom: 0;
+          right: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 0;
+        }
+      }
 
-    .section {
-      background: var(--gray-50);
-      border-radius: var(--radius);
-      padding: 24px;
-    }
+      /* ── Admin Overlay ── */
+      #admin-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #admin-overlay[hidden] {
+        display: none;
+      }
 
-    .section h2 {
-      margin-bottom: 16px;
-      font-size: 1.2rem;
-      color: var(--gray-900);
-    }
+      /* Password card */
+      #admin-card {
+        background: var(--white);
+        border-radius: var(--radius);
+        padding: 32px;
+        width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: var(--shadow);
+      }
+      #admin-card h2 {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      #admin-card p {
+        font-size: 14px;
+        color: var(--gray-500);
+      }
+      #admin-card input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 15px;
+        font-family: var(--font);
+        outline: none;
+      }
+      #admin-card input:focus {
+        border-color: var(--brand);
+      }
+      #password-submit-btn {
+        width: 100%;
+        padding: 11px;
+        background: var(--brand);
+        color: var(--white);
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font);
+      }
+      #password-submit-btn:hover {
+        background: var(--brand-dark);
+      }
+      #cancel-admin {
+        font-size: 13px;
+        color: var(--gray-400);
+        text-align: center;
+        text-decoration: none;
+        display: block;
+      }
+      #cancel-admin:hover {
+        color: var(--gray-500);
+      }
 
-    .section p {
-      margin-bottom: 16px;
-      color: var(--gray-700);
-    }
+      /* Settings panel */
+      #settings-screen {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #settings-screen[hidden] {
+        display: none;
+      }
+      #settings-panel {
+        background: var(--white);
+        border-radius: var(--radius);
+        width: 560px;
+        max-width: calc(100vw - 32px);
+        max-height: calc(100vh - 48px);
+        display: flex;
+        flex-direction: column;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      #settings-header {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+      }
+      #settings-header h2 {
+        font-size: 18px;
+        font-weight: 700;
+      }
+      #settings-close-btn {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: var(--gray-500);
+        padding: 4px;
+      }
+      #settings-close-btn:hover {
+        color: var(--gray-900);
+      }
+      #settings-form {
+        overflow-y: auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+      }
+      .settings-section h3 {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--gray-500);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 12px;
+      }
+      .settings-section label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-700);
+        margin-bottom: 10px;
+      }
+      .settings-section label:last-of-type {
+        margin-bottom: 0;
+      }
+      .settings-section input[type="text"],
+      .settings-section input[type="tel"],
+      .settings-section input[type="url"],
+      .settings-section input[type="password"],
+      .settings-section textarea {
+        width: 100%;
+        padding: 9px 13px;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: var(--font);
+        outline: none;
+        resize: vertical;
+      }
+      .settings-section input:focus,
+      .settings-section textarea:focus {
+        border-color: var(--brand);
+      }
+      .settings-section > button {
+        padding: 8px 16px;
+        background: var(--gray-100);
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: var(--font);
+        cursor: pointer;
+        color: var(--gray-700);
+      }
+      .settings-section > button:hover {
+        background: var(--gray-200);
+      }
+      input[type="color"] {
+        width: 44px;
+        height: 34px;
+        border: 1px solid var(--gray-200);
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 2px;
+        background: none;
+      }
+      #change-password-link {
+        font-size: 14px;
+        color: var(--brand);
+        text-decoration: none;
+      }
+      #change-password-link:hover {
+        text-decoration: underline;
+      }
+      #change-password-form input {
+        width: 100%;
+        padding: 9px 13px;
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: var(--font);
+        outline: none;
+      }
+      #change-password-form input:focus {
+        border-color: var(--brand);
+      }
+      #cp-submit-btn {
+        padding: 9px 16px;
+        background: var(--gray-100);
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: var(--font);
+        cursor: pointer;
+      }
+      #cp-submit-btn:hover {
+        background: var(--gray-200);
+      }
 
-    .info-grid {
-      display: grid;
-      gap: 16px;
-    }
+      /* FAQ pairs */
+      .faq-pair {
+        position: relative;
+        padding: 12px;
+        background: var(--gray-50);
+        border-radius: 8px;
+        margin-bottom: 8px;
+      }
+      .faq-pair input,
+      .faq-pair textarea {
+        display: block;
+        width: 100%;
+        padding: 8px 12px;
+        margin-bottom: 6px;
+        border: 1px solid var(--gray-200);
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: var(--font);
+        outline: none;
+        resize: vertical;
+      }
+      .faq-pair input:focus,
+      .faq-pair textarea:focus {
+        border-color: var(--brand);
+      }
+      .faq-remove-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: none;
+        border: none;
+        color: var(--gray-400);
+        cursor: pointer;
+        font-size: 18px;
+        line-height: 1;
+        padding: 0;
+      }
+      .faq-remove-btn:hover {
+        color: #ef4444;
+      }
+      #add-faq-btn {
+        font-size: 13px;
+        padding: 6px 12px;
+      }
 
-    .info-card {
-      padding: 20px;
-      background: white;
-      border-radius: 16px;
-      border: 1px solid rgba(148, 163, 184, 0.16);
-    }
+      /* Footer */
+      #settings-footer {
+        padding: 16px 24px;
+        border-top: 1px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-shrink: 0;
+      }
+      #save-settings-btn {
+        padding: 11px 24px;
+        background: var(--brand);
+        color: var(--white);
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font);
+      }
+      #save-settings-btn:hover {
+        background: var(--brand-dark);
+      }
+      #save-toast {
+        font-size: 14px;
+        color: #059669;
+        font-weight: 500;
+      }
+      #save-toast[hidden] {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Floating bubble -->
+    <button id="bubble-btn" aria-label="Öppna chat">
+      <svg
+        width="26"
+        height="26"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+        ></path>
+      </svg>
+      <span id="bubble-badge" hidden>1</span>
+    </button>
 
-    .info-card strong {
-      display: block;
-      margin-bottom: 12px;
-      color: var(--gray-900);
-    }
-
-    .info-card div {
-      color: var(--gray-700);
-      line-height: 1.7;
-    }
-
-    .form-group {
-      display: grid;
-      gap: 8px;
-      margin-bottom: 16px;
-    }
-
-    label {
-      font-weight: 600;
-      color: var(--gray-800);
-    }
-
-    input, textarea {
-      width: 100%;
-      border-radius: 14px;
-      border: 1px solid rgba(148, 163, 184, 0.28);
-      background: white;
-      padding: 14px 16px;
-      font-size: 1rem;
-      color: var(--gray-900);
-      outline: none;
-      transition: border-color .2s ease, box-shadow .2s ease;
-    }
-
-    input:focus, textarea:focus {
-      border-color: var(--brand);
-      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
-    }
-
-    textarea {
-      min-height: 140px;
-      resize: vertical;
-    }
-
-    button,
-    input[type="submit"] {
-      border: none;
-      border-radius: 999px;
-      cursor: pointer;
-      padding: 14px 20px;
-      font-weight: 700;
-      color: white;
-      background: var(--brand);
-      transition: transform .2s ease, filter .2s ease;
-    }
-
-    button:hover,
-    input[type="submit"]:hover {
-      transform: translateY(-1px);
-      filter: brightness(1.05);
-    }
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.48);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-      z-index: 10;
-    }
-
-    .modal {
-      width: min(640px, 100%);
-      max-height: 90vh;
-      overflow-y: auto;
-      background: white;
-      border-radius: var(--radius);
-      padding: 28px;
-      box-shadow: 0 32px 80px rgba(15, 23, 42, 0.18);
-    }
-
-    .modal h3 {
-      margin-bottom: 16px;
-      font-size: 1.4rem;
-    }
-
-    .modal p {
-      color: var(--gray-700);
-      margin-bottom: 24px;
-    }
-
-    .modal small {
-      display: block;
-      margin-top: 8px;
-      color: var(--gray-500);
-    }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-    }
-
-    .button-secondary {
-      background: #e5e7eb;
-      color: #111827;
-    }
-
-    .hidden { display: none !important; }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 24px;
-      background: rgba(15, 23, 42, 0.96);
-      color: white;
-      border-radius: 999px;
-      padding: 14px 20px;
-      font-size: 0.95rem;
-      z-index: 20;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .2s ease;
-    }
-
-    .toast.visible { opacity: 1; }
-
-    @media (max-width: 720px) {
-      header { padding: 24px; }
-      .content { padding: 20px; }
-      .info-grid { grid-template-columns: 1fr; }
-    }
-  </style>
-</head>
-<body>
-  <div class="page card" role="application">
-    <header>
-      <div>
-        <h1 id="brandName">AI Receptionist</h1>
-        <p id="brandTagline">Small business receptionist page for callback requests and contact details.</p>
+    <!-- Chat panel -->
+    <div id="chat-panel" class="hidden">
+      <div id="chat-header">
+        <div id="header-info">
+          <div id="header-avatar">R</div>
+          <div>
+            <div id="header-title">AI Receptionist</div>
+            <div id="header-status">● Online nu</div>
+          </div>
+        </div>
+        <button id="close-btn" aria-label="Stäng">✕</button>
       </div>
-      <button id="adminButton" class="admin-button" type="button">Admin</button>
-    </header>
 
-    <div class="content">
-      <section class="section">
-        <h2>Welcome</h2>
-        <p id="heroText">Welcome. Use Admin to set your password and update business settings.</p>
-      </section>
+      <div id="messages-area"></div>
 
-      <section class="section info-grid">
-        <div class="info-card">
-          <strong>Contact information</strong>
-          <div id="contactDetails"></div>
-        </div>
+      <div id="input-area">
+        <input
+          id="message-input"
+          type="text"
+          placeholder="Skriv ett meddelande..."
+          autocomplete="off"
+        />
+        <button id="send-btn" disabled aria-label="Skicka">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
 
-        <div class="info-card">
-          <strong>Request a callback</strong>
-          <form id="leadForm">
-            <div class="form-group">
-              <label for="visitorName">Name</label>
-              <input id="visitorName" name="visitorName" type="text" required placeholder="Your name" />
-            </div>
-            <div class="form-group">
-              <label for="visitorPhone">Phone</label>
-              <input id="visitorPhone" name="visitorPhone" type="tel" required placeholder="+46 70 123 45 67" />
-            </div>
-            <div class="form-group">
-              <label for="visitorNotes">Notes</label>
-              <textarea id="visitorNotes" name="visitorNotes" placeholder="How can we help?" rows="4"></textarea>
-            </div>
-            <input type="submit" value="Send request" />
-          </form>
-        </div>
-      </section>
+      <div id="admin-bar">
+        <a href="#" id="admin-link">Admin</a>
+      </div>
     </div>
-  </div>
 
-  <div id="modalBackdrop" class="modal-backdrop hidden" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-      <h3 id="modalTitle">Admin</h3>
-      <p id="modalDescription">Use this panel to set your admin password and update business settings. All data is saved locally in your browser.</p>
-
-      <div id="loginSection" class="admin-section hidden">
-        <div class="form-group">
-          <label for="loginPassword">Admin password</label>
-          <input id="loginPassword" type="password" placeholder="Enter password" />
-        </div>
-        <div class="modal-footer">
-          <button id="closeModal" class="button-secondary" type="button">Cancel</button>
-          <button id="loginSubmit" type="button">Log in</button>
+    <!-- Admin overlay -->
+    <div id="admin-overlay" hidden>
+      <!-- Password screen -->
+      <div id="password-screen">
+        <div id="admin-card">
+          <h2 id="password-title">Admin</h2>
+          <p id="password-desc">Ange ditt lösenord</p>
+          <input
+            id="password-input"
+            type="password"
+            placeholder="Lösenord"
+            autocomplete="current-password"
+          />
+          <p id="password-error" hidden style="color: #b91c1c; font-size: 13px">
+            Fel lösenord. Försök igen.
+          </p>
+          <button id="password-submit-btn">Logga in</button>
+          <a href="#" id="cancel-admin">Avbryt</a>
         </div>
       </div>
 
-      <div id="setupSection" class="admin-section hidden">
-        <p>Set your admin password once. You can change it later in Settings.</p>
-        <div class="form-group">
-          <label for="setupPassword">Admin password</label>
-          <input id="setupPassword" type="password" placeholder="New password" />
-        </div>
-        <div class="form-group">
-          <label for="setupPasswordConfirm">Confirm password</label>
-          <input id="setupPasswordConfirm" type="password" placeholder="Confirm password" />
-        </div>
-        <div class="modal-footer">
-          <button id="closeModal2" class="button-secondary" type="button">Cancel</button>
-          <button id="setupSubmit" type="button">Save password</button>
-        </div>
-      </div>
+      <!-- Settings screen -->
+      <div id="settings-screen" hidden>
+        <div id="settings-panel">
+          <div id="settings-header">
+            <h2>Inställningar</h2>
+            <button id="settings-close-btn">✕</button>
+          </div>
 
-      <div id="settingsSection" class="admin-section hidden">
-        <div class="form-group">
-          <label for="settingBusinessName">Business name</label>
-          <input id="settingBusinessName" type="text" />
-        </div>
-        <div class="form-group">
-          <label for="settingTagline">Tagline</label>
-          <input id="settingTagline" type="text" />
-        </div>
-        <div class="form-group">
-          <label for="settingHeroText">Welcome message</label>
-          <textarea id="settingHeroText" rows="3"></textarea>
-        </div>
-        <div class="form-group">
-          <label for="settingPhone">Phone</label>
-          <input id="settingPhone" type="tel" />
-        </div>
-        <div class="form-group">
-          <label for="settingEmail">Email</label>
-          <input id="settingEmail" type="email" />
-        </div>
-        <div class="form-group">
-          <label for="settingWebsite">Website</label>
-          <input id="settingWebsite" type="url" />
-        </div>
-        <div class="form-group">
-          <label for="settingPassword">Change password</label>
-          <input id="settingPassword" type="password" placeholder="Leave blank to keep current password" />
-        </div>
-        <div class="modal-footer">
-          <button id="closeModal3" class="button-secondary" type="button">Close</button>
-          <button id="saveSettings" type="button">Save settings</button>
+          <div id="settings-form">
+            <section class="settings-section">
+              <h3>Företag</h3>
+              <label
+                >Företagsnamn <span style="color: #ef4444">*</span>
+                <input
+                  type="text"
+                  id="s-businessName"
+                  placeholder="t.ex. Salong Vera"
+                />
+              </label>
+              <label
+                >Tagline (valfri)
+                <input
+                  type="text"
+                  id="s-tagline"
+                  placeholder="t.ex. Din salong i Gamla Stan"
+                />
+              </label>
+              <label
+                >Telefonnummer (valfritt)
+                <input
+                  type="tel"
+                  id="s-phone"
+                  placeholder="t.ex. 08-123 456 78"
+                />
+              </label>
+            </section>
+
+            <section class="settings-section">
+              <h3>Öppettider</h3>
+              <label>
+                <textarea
+                  id="s-hours"
+                  rows="3"
+                  placeholder="t.ex. Mån–Fre 09:00–18:00&#10;Lör 10:00–14:00&#10;Sön Stängt"
+                ></textarea>
+              </label>
+            </section>
+
+            <section class="settings-section">
+              <h3>Tjänster &amp; priser</h3>
+              <label>
+                <textarea
+                  id="s-services"
+                  rows="4"
+                  placeholder="t.ex.&#10;Klippning 350kr&#10;Färgning 850kr"
+                ></textarea>
+              </label>
+            </section>
+
+            <section class="settings-section">
+              <h3>Vanliga frågor (FAQ)</h3>
+              <div id="faq-list"></div>
+              <button type="button" id="add-faq-btn">+ Lägg till fråga</button>
+            </section>
+
+            <section class="settings-section">
+              <h3>Bokning</h3>
+              <label
+                >Bokningslänk
+                <input
+                  type="url"
+                  id="s-bookingUrl"
+                  placeholder="t.ex. https://www.bokadirekt.se/..."
+                />
+              </label>
+            </section>
+
+            <section class="settings-section">
+              <h3>Proxy (Worker URL)</h3>
+              <p
+                style="
+                  font-size: 12px;
+                  color: var(--gray-500);
+                  margin-bottom: 12px;
+                "
+              >
+                Klistra in URL:en till din Cloudflare Worker. API-nyckeln lagras
+                säkert i Cloudflare — aldrig i webbläsaren.
+              </p>
+              <label
+                >Worker URL
+                <input
+                  type="url"
+                  id="s-workerUrl"
+                  placeholder="https://your-worker.workers.dev"
+                  autocomplete="off"
+                />
+              </label>
+              <button type="button" id="test-api-btn">Testa anslutning</button>
+              <p
+                id="api-test-result"
+                hidden
+                style="font-size: 13px; margin-top: 6px"
+              ></p>
+            </section>
+
+            <section class="settings-section">
+              <h3>Kostnadsskydd</h3>
+              <label
+                >Daglig meddelandegräns
+                <input
+                  type="number"
+                  id="s-dailyLimit"
+                  min="1"
+                  max="1000"
+                  value="100"
+                  style="max-width: 120px"
+                />
+              </label>
+              <p
+                style="
+                  font-size: 12px;
+                  color: var(--gray-500);
+                  margin-top: 6px;
+                  margin-bottom: 12px;
+                "
+              >
+                Receptionisten stoppas när denna gräns nås. Räknaren återställs
+                dagligen kl. 00:00.
+              </p>
+              <p
+                style="
+                  font-size: 12px;
+                  color: var(--gray-700);
+                  background: var(--gray-50);
+                  padding: 8px;
+                  border-radius: 6px;
+                "
+              >
+                Idag har du skickat <span id="usage-display">0</span> /
+                <span id="usage-limit">100</span> meddelanden
+              </p>
+              <label
+                style="
+                  flex-direction: row;
+                  align-items: center;
+                  gap: 8px;
+                  font-weight: 400;
+                  cursor: pointer;
+                  margin-top: 12px;
+                  margin-bottom: 0;
+                "
+              >
+                <input type="checkbox" id="s-isKilled" />
+                Stäng av receptionisten tillfälligt
+              </label>
+            </section>
+
+            <section class="settings-section">
+              <h3>Utseende</h3>
+              <label
+                >Varumärkesfärg
+                <div
+                  style="
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-top: 4px;
+                  "
+                >
+                  <input type="color" id="s-brandColor" value="#4F46E5" />
+                  <span
+                    id="color-preview"
+                    style="
+                      display: inline-block;
+                      width: 28px;
+                      height: 28px;
+                      border-radius: 50%;
+                      border: 2px solid var(--gray-200);
+                    "
+                  ></span>
+                </div>
+              </label>
+              <label
+                >Widgetläge
+                <div style="display: flex; gap: 20px; margin-top: 8px">
+                  <label
+                    style="
+                      flex-direction: row;
+                      align-items: center;
+                      gap: 6px;
+                      font-weight: 400;
+                      cursor: pointer;
+                      margin-bottom: 0;
+                    "
+                  >
+                    <input
+                      type="radio"
+                      name="widgetMode"
+                      value="floating"
+                      checked
+                    />
+                    Flytande bubbla
+                  </label>
+                  <label
+                    style="
+                      flex-direction: row;
+                      align-items: center;
+                      gap: 6px;
+                      font-weight: 400;
+                      cursor: pointer;
+                      margin-bottom: 0;
+                    "
+                  >
+                    <input type="radio" name="widgetMode" value="embedded" />
+                    Inbäddad panel
+                  </label>
+                </div>
+              </label>
+            </section>
+
+            <section class="settings-section" id="embed-code-section" hidden>
+              <h3>Inbäddningskod</h3>
+              <p
+                style="
+                  font-size: 13px;
+                  color: var(--gray-500);
+                  margin-bottom: 8px;
+                "
+              >
+                Klistra in denna kod på din webbplats:
+              </p>
+              <textarea
+                id="embed-code-area"
+                readonly
+                rows="4"
+                style="
+                  font-family: monospace;
+                  font-size: 12px;
+                  background: var(--gray-50);
+                "
+              ></textarea>
+              <button type="button" id="copy-embed-btn">Kopiera kod</button>
+            </section>
+
+            <section class="settings-section">
+              <h3>Lösenord</h3>
+              <a href="#" id="change-password-link">Ändra lösenord</a>
+              <div
+                id="change-password-form"
+                hidden
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                  margin-top: 10px;
+                "
+              >
+                <input
+                  type="password"
+                  id="cp-current"
+                  placeholder="Nuvarande lösenord"
+                />
+                <input
+                  type="password"
+                  id="cp-new"
+                  placeholder="Nytt lösenord (minst 6 tecken)"
+                />
+                <input
+                  type="password"
+                  id="cp-confirm"
+                  placeholder="Bekräfta nytt lösenord"
+                />
+                <button type="button" id="cp-submit-btn">
+                  Uppdatera lösenord
+                </button>
+                <p
+                  id="cp-error"
+                  hidden
+                  style="font-size: 13px; color: #b91c1c"
+                ></p>
+              </div>
+            </section>
+          </div>
+
+          <div id="settings-footer">
+            <button id="save-settings-btn">Spara inställningar</button>
+            <p id="save-toast" hidden>✓ Inställningar sparade!</p>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script>
+      // ── Embed mode detection ──────────────────────────────────────────────
+      const isEmbedMode =
+        new URLSearchParams(window.location.search).get("mode") === "embed";
 
-  <script>
-    const STORAGE_KEY = 'aiReceptionistSettings';
-    const AUTH_KEY = 'aiReceptionistLoggedIn';
+      // ── DOM refs ──────────────────────────────────────────────────────────
+      const panel = document.getElementById("chat-panel");
+      const bubbleBtn = document.getElementById("bubble-btn");
+      const closeBtn = document.getElementById("close-btn");
+      const bubbleBadge = document.getElementById("bubble-badge");
 
-    const defaultData = {
-      businessName: 'AI Receptionist',
-      tagline: 'Small business receptionist page for callback requests and contact details.',
-      heroText: 'Welcome. Use Admin to set your password and update business settings.',
-      phone: '+46 70 000 00 00',
-      email: 'info@example.com',
-      website: 'https://example.com',
-      adminPassword: null
-    };
+      // ── Bubble toggle ─────────────────────────────────────────────────────
+      let badgeTimer = null;
+      let welcomeShown = false;
 
-    const state = {
-      data: loadData(),
-      isLoggedIn: sessionStorage.getItem(AUTH_KEY) === 'true'
-    };
-
-    const elements = {
-      brandName: document.getElementById('brandName'),
-      brandTagline: document.getElementById('brandTagline'),
-      heroText: document.getElementById('heroText'),
-      contactDetails: document.getElementById('contactDetails'),
-      adminButton: document.getElementById('adminButton'),
-      modalBackdrop: document.getElementById('modalBackdrop'),
-      loginSection: document.getElementById('loginSection'),
-      setupSection: document.getElementById('setupSection'),
-      settingsSection: document.getElementById('settingsSection'),
-      modalTitle: document.getElementById('modalTitle'),
-      modalDescription: document.getElementById('modalDescription'),
-      loginPassword: document.getElementById('loginPassword'),
-      setupPassword: document.getElementById('setupPassword'),
-      setupPasswordConfirm: document.getElementById('setupPasswordConfirm'),
-      settingBusinessName: document.getElementById('settingBusinessName'),
-      settingTagline: document.getElementById('settingTagline'),
-      settingHeroText: document.getElementById('settingHeroText'),
-      settingPhone: document.getElementById('settingPhone'),
-      settingEmail: document.getElementById('settingEmail'),
-      settingWebsite: document.getElementById('settingWebsite'),
-      settingPassword: document.getElementById('settingPassword'),
-      closeModal: document.getElementById('closeModal'),
-      closeModal2: document.getElementById('closeModal2'),
-      closeModal3: document.getElementById('closeModal3'),
-      loginSubmit: document.getElementById('loginSubmit'),
-      setupSubmit: document.getElementById('setupSubmit'),
-      saveSettings: document.getElementById('saveSettings'),
-      leadForm: document.getElementById('leadForm'),
-      toast: document.getElementById('toast')
-    };
-
-    function loadData() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        return saved ? Object.assign({}, defaultData, JSON.parse(saved)) : Object.assign({}, defaultData);
-      } catch (error) {
-        console.error('Failed to read settings:', error);
-        return Object.assign({}, defaultData);
-      }
-    }
-
-    function saveData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.data));
-    }
-
-    function showToast(message) {
-      elements.toast.textContent = message;
-      elements.toast.classList.add('visible');
-      window.clearTimeout(window.toastTimeout);
-      window.toastTimeout = window.setTimeout(() => {
-        elements.toast.classList.remove('visible');
-      }, 3000);
-    }
-
-    function renderContact() {
-      const lines = [
-        `Phone: ${state.data.phone}`,
-        `Email: ${state.data.email}`,
-        `Website: ${state.data.website}`
-      ];
-      elements.contactDetails.innerHTML = lines.map(line => `<div>${line}</div>`).join('');
-    }
-
-    function render() {
-      elements.brandName.textContent = state.data.businessName;
-      elements.brandTagline.textContent = state.data.tagline;
-      elements.heroText.textContent = state.data.heroText;
-      renderContact();
-      if (state.data.adminPassword && state.isLoggedIn) {
-        elements.adminButton.textContent = 'Admin (signed in)';
-      } else {
-        elements.adminButton.textContent = 'Admin';
-      }
-    }
-
-    function hideAllAdminSections() {
-      elements.loginSection.classList.add('hidden');
-      elements.setupSection.classList.add('hidden');
-      elements.settingsSection.classList.add('hidden');
-    }
-
-    function openModal() {
-      elements.modalBackdrop.classList.remove('hidden');
-      elements.modalBackdrop.setAttribute('aria-hidden', 'false');
-    }
-
-    function closeModal() {
-      elements.modalBackdrop.classList.add('hidden');
-      elements.modalBackdrop.setAttribute('aria-hidden', 'true');
-      elements.loginPassword.value = '';
-      elements.setupPassword.value = '';
-      elements.setupPasswordConfirm.value = '';
-      elements.settingPassword.value = '';
-    }
-
-    function openAdminPanel() {
-      hideAllAdminSections();
-      if (!state.data.adminPassword) {
-        elements.modalTitle.textContent = 'First-time admin setup';
-        elements.modalDescription.textContent = 'Create your admin password. After that, you can update business details and change the password in Settings.';
-        elements.setupSection.classList.remove('hidden');
-      } else if (state.isLoggedIn) {
-        elements.modalTitle.textContent = 'Settings';
-        elements.modalDescription.textContent = 'Update your business name, contact info, greeting text, and admin password.';
-        elements.settingsSection.classList.remove('hidden');
-        elements.settingBusinessName.value = state.data.businessName;
-        elements.settingTagline.value = state.data.tagline;
-        elements.settingHeroText.value = state.data.heroText;
-        elements.settingPhone.value = state.data.phone;
-        elements.settingEmail.value = state.data.email;
-        elements.settingWebsite.value = state.data.website;
-      } else {
-        elements.modalTitle.textContent = 'Admin login';
-        elements.modalDescription.textContent = 'Enter your admin password to access settings.';
-        elements.loginSection.classList.remove('hidden');
-      }
-      openModal();
-    }
-
-    elements.adminButton.addEventListener('click', openAdminPanel);
-    elements.closeModal.addEventListener('click', closeModal);
-    elements.closeModal2.addEventListener('click', closeModal);
-    elements.closeModal3.addEventListener('click', closeModal);
-
-    elements.setupSubmit.addEventListener('click', () => {
-      const password = elements.setupPassword.value.trim();
-      const confirm = elements.setupPasswordConfirm.value.trim();
-      if (!password || password.length < 6) {
-        showToast('Please choose a password with at least 6 characters.');
-        return;
-      }
-      if (password !== confirm) {
-        showToast('Passwords do not match.');
-        return;
-      }
-      state.data.adminPassword = password;
-      saveData();
-      state.isLoggedIn = true;
-      sessionStorage.setItem(AUTH_KEY, 'true');
-      showToast('Admin password saved. You are now signed in.');
-      render();
-      openAdminPanel();
-    });
-
-    elements.loginSubmit.addEventListener('click', () => {
-      const attempt = elements.loginPassword.value.trim();
-      if (attempt === state.data.adminPassword) {
-        state.isLoggedIn = true;
-        sessionStorage.setItem(AUTH_KEY, 'true');
-        showToast('Signed in successfully.');
-        render();
-        openAdminPanel();
-      } else {
-        showToast('Wrong password. Try again.');
-      }
-    });
-
-    elements.saveSettings.addEventListener('click', () => {
-      const updatedName = elements.settingBusinessName.value.trim();
-      const updatedTagline = elements.settingTagline.value.trim();
-      const updatedHeroText = elements.settingHeroText.value.trim();
-      const updatedPhone = elements.settingPhone.value.trim();
-      const updatedEmail = elements.settingEmail.value.trim();
-      const updatedWebsite = elements.settingWebsite.value.trim();
-      const newPassword = elements.settingPassword.value.trim();
-
-      if (!updatedName || !updatedTagline || !updatedHeroText) {
-        showToast('Business name, tagline, and welcome message are required.');
-        return;
+      function showWelcomeMessage() {
+        if (welcomeShown) return;
+        welcomeShown = true;
+        const name = config.businessName ? ` på ${config.businessName}` : "";
+        appendMessage(
+          `Hej! Välkommen${name}. Hur kan jag hjälpa dig idag? 😊`,
+          "ai",
+        );
       }
 
-      state.data.businessName = updatedName;
-      state.data.tagline = updatedTagline;
-      state.data.heroText = updatedHeroText;
-      state.data.phone = updatedPhone || state.data.phone;
-      state.data.email = updatedEmail || state.data.email;
-      state.data.website = updatedWebsite || state.data.website;
+      function openChat() {
+        panel.classList.remove("hidden");
+        bubbleBadge.hidden = true;
+        clearTimeout(badgeTimer);
+        showWelcomeMessage();
+      }
 
-      if (newPassword) {
-        if (newPassword.length < 6) {
-          showToast('New password must have at least 6 characters.');
+      function closeChat() {
+        panel.classList.add("hidden");
+      }
+
+      bubbleBtn.addEventListener("click", () => {
+        panel.classList.contains("hidden") ? openChat() : closeChat();
+      });
+      closeBtn.addEventListener("click", closeChat);
+
+      badgeTimer = setTimeout(() => {
+        if (panel.classList.contains("hidden")) bubbleBadge.hidden = false;
+      }, 4000);
+
+      // ── Config ───────────────────────────────────────────────────────────
+      const STORAGE_KEY = "ai_receptionist_config";
+
+      const DEFAULT_CONFIG = {
+        businessName: "",
+        tagline: "",
+        phone: "",
+        hours: "",
+        services: "",
+        faqs: [{ q: "", a: "" }],
+        bookingUrl: "",
+        workerUrl: "",
+        brandColor: "#4F46E5",
+        passwordHash: null,
+        dailyLimit: 100,
+        requestsSinceReset: 0,
+        resetDate: new Date().toISOString().split("T")[0],
+        isKilled: false,
+      };
+
+      let config = { ...DEFAULT_CONFIG };
+
+      function loadConfig() {
+        try {
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) {
+            config = { ...DEFAULT_CONFIG, ...JSON.parse(stored) };
+          }
+        } catch {
+          config = { ...DEFAULT_CONFIG };
+        }
+      }
+
+      function saveConfig() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+      }
+
+      function darkenColor(hex, pct) {
+        const n = parseInt(hex.replace("#", ""), 16);
+        const r = Math.max(0, (n >> 16) - Math.round(2.55 * pct));
+        const g = Math.max(0, ((n >> 8) & 0xff) - Math.round(2.55 * pct));
+        const b = Math.max(0, (n & 0xff) - Math.round(2.55 * pct));
+        return (
+          "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")
+        );
+      }
+
+      // ── Rate Limiting ─────────────────────────────────────────────────────────
+      const RATE_LIMIT = { maxRequests: 10, windowMs: 60000 }; // 10 req/min
+      let requestTimestamps = [];
+
+      function isRateLimited() {
+        const now = Date.now();
+        requestTimestamps = requestTimestamps.filter(
+          (t) => now - t < RATE_LIMIT.windowMs,
+        );
+        if (requestTimestamps.length >= RATE_LIMIT.maxRequests) return true;
+        requestTimestamps.push(now);
+        return false;
+      }
+
+      // ── Cost Guard (SaaS protection) ───────────────────────────────────────────
+      function checkCostGuard() {
+        // Kill switch check
+        if (config.isKilled) {
+          return {
+            allowed: false,
+            reason: "widgetDisabled",
+            message:
+              "Denna receptionist är temporärt avstängd. / This receptionist is temporarily disabled.",
+          };
+        }
+
+        // Reset daily counter if needed
+        const today = new Date().toISOString().split("T")[0];
+        if (config.resetDate !== today) {
+          config.requestsSinceReset = 0;
+          config.resetDate = today;
+          saveConfig();
+        }
+
+        // Daily limit check
+        if (config.requestsSinceReset >= config.dailyLimit) {
+          return {
+            allowed: false,
+            reason: "dailyLimitExceeded",
+            message: `Daglig gräns nådd (${config.dailyLimit} meddelanden). / Daily limit reached (${config.dailyLimit} messages).`,
+          };
+        }
+
+        return { allowed: true };
+      }
+
+      function incrementUsage() {
+        config.requestsSinceReset = (config.requestsSinceReset || 0) + 1;
+        saveConfig();
+      }
+
+      function applyConfig() {
+        document.documentElement.style.setProperty(
+          "--brand",
+          config.brandColor,
+        );
+        document.documentElement.style.setProperty(
+          "--brand-dark",
+          darkenColor(config.brandColor, 15),
+        );
+        document.getElementById("header-title").textContent =
+          config.businessName || "AI Receptionist";
+        document.getElementById("header-avatar").textContent =
+          (config.businessName || "A")[0].toUpperCase();
+      }
+
+      loadConfig();
+      applyConfig();
+
+      // ── Chat ──────────────────────────────────────────────────────────────
+      const messagesArea = document.getElementById("messages-area");
+      const messageInput = document.getElementById("message-input");
+      const sendBtn = document.getElementById("send-btn");
+      let conversationHistory = [];
+
+      function appendMessage(text, role) {
+        const div = document.createElement("div");
+        div.className = `msg msg-${role}`;
+        div.textContent = text;
+        messagesArea.appendChild(div);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+        return div;
+      }
+
+      function appendError(text) {
+        const div = document.createElement("div");
+        div.className = "msg msg-error";
+        div.textContent = text;
+        messagesArea.appendChild(div);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+      }
+
+      function showTypingIndicator() {
+        const div = document.createElement("div");
+        div.className = "msg msg-typing";
+        div.id = "typing-indicator";
+        div.innerHTML =
+          '<div class="typing-dots"><span></span><span></span><span></span></div>';
+        messagesArea.appendChild(div);
+        messagesArea.scrollTop = messagesArea.scrollHeight;
+      }
+
+      function removeTypingIndicator() {
+        document.getElementById("typing-indicator")?.remove();
+      }
+
+      messageInput.addEventListener("input", () => {
+        sendBtn.disabled = messageInput.value.trim().length === 0;
+      });
+      messageInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey && !sendBtn.disabled) {
+          e.preventDefault();
+          handleSend();
+        }
+      });
+      sendBtn.addEventListener("click", handleSend);
+
+      function buildSystemPrompt() {
+        const faqText = (config.faqs || [])
+          .filter((f) => f.q && f.a)
+          .map((f) => `Q: ${f.q}\nA: ${f.a}`)
+          .join("\n\n");
+
+        return `Du är AI-receptionisten för ${config.businessName || "detta företag"}.
+
+VIKTIG INSTRUKTION OM SPRÅK: Svara ALLTID på samma språk som besökaren skriver på. Om de skriver på svenska → svar på svenska. Om de skriver på engelska → svar på engelska. Blanda aldrig språk i ett svar.
+
+Företagsinformation:
+${config.businessName ? `Namn: ${config.businessName}` : ""}
+${config.tagline ? `Tagline: ${config.tagline}` : ""}
+${config.phone ? `Telefon: ${config.phone}` : ""}
+
+Öppettider:
+${config.hours || "Inte angivet"}
+
+Tjänster och priser:
+${config.services || "Inte angivet"}
+
+${faqText ? `Vanliga frågor:\n${faqText}` : ""}
+${config.bookingUrl ? `\nBokning: Hänvisa till ${config.bookingUrl} när besökaren vill boka.` : ""}
+
+Regler:
+- Svara vänligt, professionellt och kortfattat (1–3 meningar)
+- Svara BARA baserat på informationen ovan — hitta aldrig på detaljer
+- Om du inte vet svaret, säg det ärligt${config.phone ? ` och erbjud besökaren att ringa ${config.phone}` : ""}`;
+      }
+
+      async function handleSend() {
+        const text = messageInput.value.trim().slice(0, 1000);
+        if (!text) return;
+
+        if (!config.workerUrl) {
+          appendError(
+            "Den här receptionisten är inte konfigurerad ännu. / This receptionist is not yet configured.",
+          );
           return;
         }
-        state.data.adminPassword = newPassword;
+
+        if (isRateLimited()) {
+          appendError(
+            "Du skickar för många meddelanden. Vänta ett par sekunder. / Too many requests. Please wait a few seconds.",
+          );
+          messageInput.value = "";
+          sendBtn.disabled = true;
+          setTimeout(() => {
+            sendBtn.disabled = messageInput.value.trim().length > 0;
+          }, 2000);
+          return;
+        }
+
+        const costCheck = checkCostGuard();
+        if (!costCheck.allowed) {
+          appendError(costCheck.message);
+          messageInput.value = "";
+          sendBtn.disabled = true;
+          return;
+        }
+
+        messageInput.value = "";
+        sendBtn.disabled = true;
+        appendMessage(text, "user");
+        conversationHistory.push({ role: "user", content: text });
+        showTypingIndicator();
+
+        let aiEl = null;
+        let fullResponse = "";
+
+        try {
+          const response = await fetch(config.workerUrl, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              model: "claude-sonnet-4-6",
+              max_tokens: 512,
+              system: buildSystemPrompt(),
+              messages: conversationHistory,
+              stream: true,
+            }),
+          });
+
+          if (!response.ok) throw new Error(`API ${response.status}`);
+
+          removeTypingIndicator();
+          aiEl = appendMessage("", "ai");
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const lines = decoder.decode(value, { stream: true }).split("\n");
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const raw = line.slice(6).trim();
+              if (!raw || raw === "[DONE]") continue;
+              try {
+                const evt = JSON.parse(raw);
+                if (
+                  evt.type === "content_block_delta" &&
+                  evt.delta?.type === "text_delta"
+                ) {
+                  fullResponse += evt.delta.text;
+                  aiEl.textContent = fullResponse;
+                  messagesArea.scrollTop = messagesArea.scrollHeight;
+                }
+              } catch {
+                /* skip malformed SSE lines */
+              }
+            }
+          }
+
+          conversationHistory.push({
+            role: "assistant",
+            content: fullResponse,
+          });
+          incrementUsage();
+        } catch {
+          removeTypingIndicator();
+          const phone = config.phone ? ` Ring oss på ${config.phone}.` : "";
+          appendError(`Ursäkta, jag har tekniska problem just nu.${phone}`);
+          conversationHistory.pop();
+        }
       }
 
-      saveData();
-      showToast('Settings saved successfully.');
-      render();
-      closeModal();
-    });
-
-    elements.leadForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const name = document.getElementById('visitorName').value.trim();
-      const phone = document.getElementById('visitorPhone').value.trim();
-      const notes = document.getElementById('visitorNotes').value.trim();
-
-      if (!name || !phone) {
-        showToast('Please enter your name and phone number.');
-        return;
+      // ── Auth ──────────────────────────────────────────────────────────────
+      async function hashPassword(pw) {
+        const buf = await crypto.subtle.digest(
+          "SHA-256",
+          new TextEncoder().encode(pw),
+        );
+        return Array.from(new Uint8Array(buf))
+          .map((b) => b.toString(16).padStart(2, "0"))
+          .join("");
       }
-      showToast('Callback request saved locally. Use Admin to check or change settings.');
-      elements.leadForm.reset();
-    });
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && !elements.modalBackdrop.classList.contains('hidden')) {
-        closeModal();
+      async function checkPassword(pw) {
+        return (await hashPassword(pw)) === config.passwordHash;
       }
-    });
 
-    elements.modalBackdrop.addEventListener('click', (event) => {
-      if (event.target === elements.modalBackdrop) {
-        closeModal();
+      const adminOverlay = document.getElementById("admin-overlay");
+      const passwordScreen = document.getElementById("password-screen");
+      const settingsScreen = document.getElementById("settings-screen");
+      const passwordInput = document.getElementById("password-input");
+      const passwordError = document.getElementById("password-error");
+      const passwordTitle = document.getElementById("password-title");
+      const passwordDesc = document.getElementById("password-desc");
+      const submitBtn = document.getElementById("password-submit-btn");
+
+      let isCreatingPassword = false;
+      let pendingNewPassword = null;
+
+      function openAdminOverlay() {
+        adminOverlay.hidden = false;
+        passwordScreen.hidden = false;
+        settingsScreen.hidden = true;
+        passwordInput.value = "";
+        passwordError.hidden = true;
+
+        if (!config.passwordHash) {
+          isCreatingPassword = true;
+          pendingNewPassword = null;
+          passwordTitle.textContent = "Välkommen!";
+          passwordDesc.textContent = "Välj ett lösenord för adminsidan.";
+          submitBtn.textContent = "Skapa lösenord";
+        } else {
+          isCreatingPassword = false;
+          passwordTitle.textContent = "Admin";
+          passwordDesc.textContent = "Ange ditt lösenord";
+          submitBtn.textContent = "Logga in";
+        }
+        passwordInput.focus();
       }
-    });
 
-    render();
-  </script>
-</body>
+      function closeAdminOverlay() {
+        adminOverlay.hidden = true;
+      }
+
+      document.getElementById("admin-link").addEventListener("click", (e) => {
+        e.preventDefault();
+        openAdminOverlay();
+      });
+      document.getElementById("cancel-admin").addEventListener("click", (e) => {
+        e.preventDefault();
+        closeAdminOverlay();
+      });
+      document
+        .getElementById("settings-close-btn")
+        .addEventListener("click", closeAdminOverlay);
+
+      async function handlePasswordSubmit() {
+        const value = passwordInput.value.trim();
+        if (!value) return;
+
+        if (isCreatingPassword) {
+          if (!pendingNewPassword) {
+            pendingNewPassword = value;
+            passwordDesc.textContent = "Bekräfta ditt lösenord.";
+            passwordInput.value = "";
+            return;
+          }
+          if (value !== pendingNewPassword) {
+            passwordError.textContent = "Lösenorden matchar inte. Börja om.";
+            passwordError.hidden = false;
+            passwordInput.value = "";
+            pendingNewPassword = null;
+            passwordDesc.textContent = "Välj ett lösenord för adminsidan.";
+            return;
+          }
+          config.passwordHash = await hashPassword(pendingNewPassword);
+          saveConfig();
+          showSettingsScreen();
+        } else {
+          if (await checkPassword(value)) {
+            showSettingsScreen();
+          } else {
+            passwordError.textContent = "Fel lösenord. Försök igen.";
+            passwordError.hidden = false;
+            passwordInput.value = "";
+            passwordInput.focus();
+          }
+        }
+      }
+
+      submitBtn.addEventListener("click", handlePasswordSubmit);
+      passwordInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") handlePasswordSubmit();
+      });
+
+      // ── Settings Form ─────────────────────────────────────────────────────
+      function escapeHtml(str) {
+        return (str || "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
+      function populateSettingsForm() {
+        document.getElementById("s-businessName").value =
+          config.businessName || "";
+        document.getElementById("s-tagline").value = config.tagline || "";
+        document.getElementById("s-phone").value = config.phone || "";
+        document.getElementById("s-hours").value = config.hours || "";
+        document.getElementById("s-services").value = config.services || "";
+        document.getElementById("s-bookingUrl").value = config.bookingUrl || "";
+        document.getElementById("s-workerUrl").value = config.workerUrl || "";
+        document.getElementById("s-brandColor").value =
+          config.brandColor || "#4F46E5";
+        document.getElementById("s-dailyLimit").value =
+          config.dailyLimit || 100;
+        document.getElementById("s-isKilled").checked =
+          config.isKilled || false;
+        document.getElementById("usage-display").textContent =
+          config.requestsSinceReset || 0;
+        document.getElementById("usage-limit").textContent =
+          config.dailyLimit || 100;
+        document.getElementById("color-preview").style.background =
+          config.brandColor || "#4F46E5";
+        renderFaqList();
+        updateEmbedSection();
+      }
+
+      function renderFaqList() {
+        const container = document.getElementById("faq-list");
+        container.innerHTML = "";
+        const faqs =
+          config.faqs && config.faqs.length ? config.faqs : [{ q: "", a: "" }];
+        faqs.forEach((faq, i) => {
+          const div = document.createElement("div");
+          div.className = "faq-pair";
+          div.innerHTML = `
+          <input type="text" placeholder="Fråga" value="${escapeHtml(faq.q)}"
+                 data-faq="${i}" data-field="q" />
+          <textarea rows="2" placeholder="Svar"
+                    data-faq="${i}" data-field="a">${escapeHtml(faq.a)}</textarea>
+          <button class="faq-remove-btn" data-faq="${i}" title="Ta bort">×</button>`;
+          container.appendChild(div);
+        });
+      }
+
+      function getFaqsFromForm() {
+        return Array.from(document.querySelectorAll(".faq-pair"))
+          .map((pair) => ({
+            q: pair.querySelector('[data-field="q"]').value.trim(),
+            a: pair.querySelector('[data-field="a"]').value.trim(),
+          }))
+          .filter((f) => f.q || f.a);
+      }
+
+      document.getElementById("faq-list").addEventListener("click", (e) => {
+        if (!e.target.classList.contains("faq-remove-btn")) return;
+        const i = parseInt(e.target.dataset.faq);
+        config.faqs.splice(i, 1);
+        if (!config.faqs.length) config.faqs = [{ q: "", a: "" }];
+        renderFaqList();
+      });
+
+      document.getElementById("add-faq-btn").addEventListener("click", () => {
+        config.faqs = getFaqsFromForm();
+        if (config.faqs.length >= 5) return;
+        config.faqs.push({ q: "", a: "" });
+        renderFaqList();
+      });
+
+      document.getElementById("s-brandColor").addEventListener("input", (e) => {
+        document.getElementById("color-preview").style.background =
+          e.target.value;
+      });
+
+      document
+        .querySelectorAll('[name="widgetMode"]')
+        .forEach((r) => r.addEventListener("change", updateEmbedSection));
+
+      function updateEmbedSection() {
+        const mode =
+          document.querySelector('[name="widgetMode"]:checked')?.value ||
+          "floating";
+        const section = document.getElementById("embed-code-section");
+        section.hidden = mode !== "embedded";
+        if (mode === "embedded") {
+          const base = window.location.href.split("?")[0];
+          document.getElementById("embed-code-area").value =
+            `<iframe src="${base}?mode=embed"\n        width="100%" height="600" frameborder="0"\n        style="border:none;border-radius:12px;"></iframe>`;
+        }
+      }
+
+      document
+        .getElementById("copy-embed-btn")
+        .addEventListener("click", () => {
+          const area = document.getElementById("embed-code-area");
+          area.select();
+          navigator.clipboard
+            .writeText(area.value)
+            .catch(() => document.execCommand("copy"));
+          const btn = document.getElementById("copy-embed-btn");
+          btn.textContent = "✓ Kopierad!";
+          setTimeout(() => {
+            btn.textContent = "Kopiera kod";
+          }, 2000);
+        });
+
+      document
+        .getElementById("save-settings-btn")
+        .addEventListener("click", () => {
+          config.businessName = document
+            .getElementById("s-businessName")
+            .value.trim();
+          config.tagline = document.getElementById("s-tagline").value.trim();
+          config.phone = document.getElementById("s-phone").value.trim();
+          config.hours = document.getElementById("s-hours").value.trim();
+          config.services = document.getElementById("s-services").value.trim();
+          config.faqs = getFaqsFromForm();
+          config.bookingUrl = document
+            .getElementById("s-bookingUrl")
+            .value.trim();
+          config.workerUrl = document
+            .getElementById("s-workerUrl")
+            .value.trim();
+          config.brandColor = document.getElementById("s-brandColor").value;
+          config.dailyLimit = Math.max(
+            1,
+            parseInt(document.getElementById("s-dailyLimit").value) || 100,
+          );
+          config.isKilled = document.getElementById("s-isKilled").checked;
+          saveConfig();
+          applyConfig();
+          document.getElementById("usage-limit").textContent =
+            config.dailyLimit;
+          const toast = document.getElementById("save-toast");
+          toast.hidden = false;
+          setTimeout(() => {
+            toast.hidden = true;
+          }, 3000);
+        });
+
+      document
+        .getElementById("change-password-link")
+        .addEventListener("click", (e) => {
+          e.preventDefault();
+          const form = document.getElementById("change-password-form");
+          form.hidden = !form.hidden;
+        });
+
+      document
+        .getElementById("cp-submit-btn")
+        .addEventListener("click", async () => {
+          const current = document.getElementById("cp-current").value;
+          const newPw = document.getElementById("cp-new").value;
+          const confirm = document.getElementById("cp-confirm").value;
+          const errorEl = document.getElementById("cp-error");
+          errorEl.hidden = true;
+
+          if (!(await checkPassword(current))) {
+            errorEl.textContent = "Fel nuvarande lösenord.";
+            errorEl.hidden = false;
+            return;
+          }
+          if (newPw.length < 6) {
+            errorEl.textContent = "Nytt lösenord måste vara minst 6 tecken.";
+            errorEl.hidden = false;
+            return;
+          }
+          if (newPw !== confirm) {
+            errorEl.textContent = "Lösenorden matchar inte.";
+            errorEl.hidden = false;
+            return;
+          }
+          config.passwordHash = await hashPassword(newPw);
+          saveConfig();
+          document.getElementById("change-password-form").hidden = true;
+          ["cp-current", "cp-new", "cp-confirm"].forEach((id) => {
+            document.getElementById(id).value = "";
+          });
+          alert("Lösenordet har uppdaterats!");
+        });
+
+      document
+        .getElementById("test-api-btn")
+        .addEventListener("click", async () => {
+          const url = document.getElementById("s-workerUrl").value.trim();
+          const result = document.getElementById("api-test-result");
+          const btn = document.getElementById("test-api-btn");
+          if (!url) {
+            result.textContent = "⚠ Ange en Worker URL först.";
+            result.style.color = "#B45309";
+            result.hidden = false;
+            return;
+          }
+          btn.textContent = "Testar...";
+          try {
+            const res = await fetch(url, {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                model: "claude-sonnet-4-6",
+                max_tokens: 10,
+                messages: [{ role: "user", content: "Hi" }],
+              }),
+            });
+            if (res.ok) {
+              result.textContent = "✓ Anslutning OK!";
+              result.style.color = "#059669";
+            } else {
+              const err = await res.json().catch(() => ({}));
+              result.textContent = `✗ ${err.error?.message || "Fel " + res.status}`;
+              result.style.color = "#B91C1C";
+            }
+          } catch {
+            result.textContent = "✗ Kunde inte ansluta till Worker.";
+            result.style.color = "#B91C1C";
+          }
+          result.hidden = false;
+          btn.textContent = "Testa anslutning";
+        });
+
+      function showSettingsScreen() {
+        passwordScreen.hidden = true;
+        settingsScreen.hidden = false;
+        populateSettingsForm();
+      }
+
+      // Embed mode activation
+      if (isEmbedMode) {
+        document.body.classList.add("embed-mode");
+        panel.classList.remove("hidden");
+        setTimeout(showWelcomeMessage, 300);
+      }
+    </script>
+  </body>
 </html>
