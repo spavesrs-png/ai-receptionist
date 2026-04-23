@@ -1,4 +1,5 @@
 # AI Receptionist — Design Spec
+
 **Date:** 2026-04-17
 **Author:** Simon (solo entrepreneur, Sweden)
 **Status:** Approved
@@ -17,6 +18,7 @@ A single-file AI receptionist widget that small Swedish businesses (restaurants,
 ## 2. Architecture
 
 ### Technology
+
 - **Single file:** `receptionist.html` — vanilla HTML, CSS, JavaScript. No frameworks, no build tools.
 - **Storage:** Browser `localStorage` — all config and the admin password hash are stored client-side.
 - **AI:** Claude API (`claude-sonnet-4-6`) called directly from the browser via `fetch()`.
@@ -24,10 +26,13 @@ A single-file AI receptionist widget that small Swedish businesses (restaurants,
 - **File size target:** Under 50KB. No external fonts, no CDN dependencies. Only external call is to `api.anthropic.com`.
 
 ### API Key Ownership
+
 Each business provides their own Claude API key, pasted into the admin panel. The key is stored in `localStorage`. The business pays Anthropic directly for their own usage. Simon (the developer/seller) has no API costs.
 
 ### Two Rendering Modes
+
 The page detects its rendering mode via the `?mode=embed` URL parameter:
+
 - **Default (no param):** Floating bubble mode.
 - **`?mode=embed`:** Embedded panel mode — renders as a block element that fills its container.
 
@@ -38,14 +43,17 @@ This allows the business owner to use floating mode on their live site and share
 ## 3. Chat Interface
 
 ### Visitor Experience
+
 - Clean chat panel: branded header, scrollable message area, text input, send button.
-- On load: AI sends a welcome message in Swedish — *"Hej! Hur kan jag hjälpa dig idag?"*
+- On load: AI sends a welcome message in Swedish — _"Hej! Hur kan jag hjälpa dig idag?"_
 - Language auto-detection: Claude responds in whatever language the visitor writes — Swedish or English. No toggle, no manual selection.
 - Streaming responses: Claude's reply appears word-by-word as it is generated, giving a fast, premium feel.
 - Session memory only: conversation history is held in a JS array for the current page session. Refreshing the page starts a new conversation. Nothing is persisted to localStorage.
 
 ### System Prompt
+
 Injected invisibly with every API call. Contains:
+
 - Business name and role ("You are the AI receptionist for [Business Name]")
 - Opening hours, services/prices, FAQs
 - Booking link instruction ("When a visitor wants to book, share this link: [URL]")
@@ -54,18 +62,20 @@ Injected invisibly with every API call. Contains:
 - Honesty instruction ("Only answer using the information provided. Never invent details.")
 
 ### Edge Cases
-| Situation | Behaviour |
-|---|---|
-| API key not configured | Chat shows: *"Den här receptionisten är inte konfigurerad ännu."* / *"This receptionist is not yet configured."* |
-| Claude API error | Chat shows: *"Ursäkta, jag har tekniska problem just nu. Ring oss gärna direkt."* + phone number from config if set |
-| Empty message sent | Send button disabled, no API call made |
-| Visitor sends very long message | Truncated to 1000 characters before sending to API |
+
+| Situation                       | Behaviour                                                                                                           |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| API key not configured          | Chat shows: _"Den här receptionisten är inte konfigurerad ännu."_ / _"This receptionist is not yet configured."_    |
+| Claude API error                | Chat shows: _"Ursäkta, jag har tekniska problem just nu. Ring oss gärna direkt."_ + phone number from config if set |
+| Empty message sent              | Send button disabled, no API call made                                                                              |
+| Visitor sends very long message | Truncated to 1000 characters before sending to API                                                                  |
 
 ---
 
 ## 4. Admin Panel
 
 ### Access
+
 - A small, discreet "Admin" link at the bottom of the chat widget. Styled to be unobtrusive (small grey text) — visitors won't notice it.
 - Clicking it opens a password overlay on top of the chat widget.
 - **First visit:** prompts to create a password (entered twice to confirm).
@@ -75,28 +85,35 @@ Injected invisibly with every API call. Contains:
 ### Settings Form
 
 **Business**
+
 - Business name (text, required)
 - Tagline (text, optional — shown in chat header)
 - Phone number (text, optional — used in error messages)
 
 **Opening Hours**
+
 - Free-text area (e.g. "Mån–Fre 09:00–18:00, Lör 10:00–14:00")
 
 **Services**
+
 - Free-text area for services and prices (e.g. "Klippning 350kr, Färgning 850kr")
 
 **FAQs**
+
 - Up to 5 FAQ pairs: Question field + Answer field
 - Add/remove FAQ pairs dynamically
 
 **Booking**
+
 - Booking link URL (text, e.g. their Bokadirekt or Timma page)
 
 **API**
+
 - Claude API key (password-masked input)
 - "Test connection" button — sends a minimal test message to the API and shows success/failure
 
 **Appearance**
+
 - Primary brand colour (colour picker input)
   - Applied to: chat header background, send button, visitor message bubbles
 - Widget mode selector: Floating Bubble / Embedded Panel
@@ -104,17 +121,20 @@ Injected invisibly with every API call. Contains:
   - The actual rendering mode is always determined by the URL: no param = floating, `?mode=embed` = embedded
   - Both modes are always available from the same deployed URL simultaneously
 
-**Embed Code** *(shown only when Embedded mode is selected in the toggle)*
+**Embed Code** _(shown only when Embedded mode is selected in the toggle)_
+
 - Read-only text area with the iframe snippet (pre-filled with their Vercel URL + `?mode=embed`)
 - "Copy" button
 
 ### Save Behaviour
+
 - Single "Save Settings" button at bottom of form
 - Saves all fields to `localStorage` as a single JSON object
 - Changes apply immediately — no page reload required
-- Success toast: *"Inställningar sparade!"*
+- Success toast: _"Inställningar sparade!"_
 
 ### Password Change
+
 - "Ändra lösenord" link at bottom of admin panel
 - Opens an inline form: current password + new password + confirm
 
@@ -123,6 +143,7 @@ Injected invisibly with every API call. Contains:
 ## 5. Widget Modes
 
 ### Floating Bubble Mode
+
 - Fixed position, bottom-right corner of the viewport
 - Circular button (56px diameter) with a chat icon, coloured with the primary brand colour
 - Clicking opens a chat panel (400px wide, 550px tall) that animates up from the button
@@ -131,15 +152,20 @@ Injected invisibly with every API call. Contains:
 - On mobile (viewport < 480px): panel expands to full screen
 
 ### Embedded Panel Mode
+
 - Chat panel renders as a normal block element, 100% width of its container, 600px tall
 - No floating button
 - Activated via `?mode=embed` URL parameter
 - Business owner copies this snippet from the admin panel:
 
 ```html
-<iframe src="https://your-site.vercel.app/receptionist.html?mode=embed"
-        width="100%" height="600" frameborder="0"
-        style="border: none; border-radius: 12px;"></iframe>
+<iframe
+  src="https://your-site.vercel.app/receptionist.html?mode=embed"
+  width="100%"
+  height="600"
+  frameborder="0"
+  style="border: none; border-radius: 12px;"
+></iframe>
 ```
 
 ---
